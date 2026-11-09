@@ -1,0 +1,92 @@
+<title>의료 블로그 글감</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* 레이아웃: 한 줄 머리말 → 오늘의 글감 표 → 지난 7일 목록. 진료 기록지처럼 차분하게. */
+:root {
+  --bg: #f5f7f7;
+  --surface: #ffffff;
+  --fg: #142322;
+  --muted: #5a6b69;
+  --line: #d8e0df;
+  --accent: #17607a;
+  --low: #1e7a4c;
+  --mid: #9a6a0e;
+  --high: #b03a2e;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1716; --surface: #16201f; --fg: #e3ecea; --muted: #93a5a2; --line: #2a3735;
+    --accent: #6cb7d1; --low: #6fcf97; --mid: #e3b45a; --high: #f08a7e; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1716; --surface: #16201f; --fg: #e3ecea; --muted: #93a5a2; --line: #2a3735;
+  --accent: #6cb7d1; --low: #6fcf97; --mid: #e3b45a; --high: #f08a7e; color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 48px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 32px; }
+header { display: grid; gap: 4px; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; color: var(--muted); }
+h1 { margin: 0; font-size: 28px; font-weight: 700; text-wrap: balance; }
+.meta { color: var(--muted); font-size: 14px; }
+.meta time, .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+h2 { margin: 0 0 12px; font-size: 18px; font-weight: 700; }
+.table-box { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+table { width: 100%; border-collapse: collapse; min-width: 760px; }
+th, td { padding: 12px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .04em; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; white-space: nowrap; }
+.title { font-weight: 700; }
+.why, .rel { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.kw { font-family: var(--font-data); font-size: 13px; color: var(--accent); }
+.comp { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; border: 1px solid currentColor; white-space: nowrap; }
+.comp.low { color: var(--low); } .comp.mid { color: var(--mid); } .comp.high { color: var(--high); } .comp.none { color: var(--muted); }
+.empty { padding: 28px 20px; color: var(--muted); }
+.alert { padding: 14px 16px; border: 1px solid var(--high); color: var(--high); border-radius: 8px; background: var(--surface); white-space: pre-wrap; }
+.history { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.history li { display: grid; grid-template-columns: 7.5em 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.history li > div { min-width: 0; }
+.history time { color: var(--muted); }
+footer { color: var(--muted); font-size: 13px; display: grid; gap: 4px; }
+a { color: var(--accent); }
+@media (max-width: 480px) { h1 { font-size: 23px; } .history li { grid-template-columns: 1fr; gap: 2px; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">매일 저녁 8시 · 네이버 검색광고 키워드 도구 + 최신 이슈</div>
+    <h1>의료 블로그 글감</h1>
+    <div class="meta">마지막 갱신 <time id="updated">—</time></div>
+  </header>
+
+  <section aria-labelledby="today-h">
+    <h2 id="today-h">오늘의 글감</h2>
+    <!-- TODAY:START -->
+    <div class="table-box">
+      <div class="empty">첫 결과는 오늘 저녁 8시 전후에 이곳에 올라옵니다. 글감마다 추천 제목, 핵심 키워드, 월간 검색수와 클릭수, 경쟁도, 고른 이유가 표로 정리됩니다.</div>
+    </div>
+    <!-- TODAY:END -->
+  </section>
+
+  <section aria-labelledby="hist-h">
+    <h2 id="hist-h">지난 7일</h2>
+    <!-- HISTORY:START -->
+    <ul class="history">
+      <li><time class="num">—</time><div>아직 기록이 없습니다.</div></li>
+    </ul>
+    <!-- HISTORY:END -->
+  </section>
+
+  <footer>
+    <div>검색수·클릭수는 네이버 검색광고 키워드 도구의 최근 30일 기준이며, 클릭수는 월평균 추정치입니다. 경쟁도는 검색광고 입찰 경쟁 정도입니다.</div>
+    <div>특정 병원·시술 홍보나 치료 효과를 단정하는 주제는 의료광고 기준에 따라 제외합니다.</div>
+  </footer>
+</div>
