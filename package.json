@@ -6,7 +6,7 @@
   "main": "server.js",
   "bin": { "naver-searchad-mcp": "server.js" },
   "engines": { "node": ">=18" },
-  "scripts": { "start": "node server.js", "topics": "node cli.js" },
+  "scripts": { "start": "node server.js", "topics": "NODE_USE_ENV_PROXY=1 node --no-warnings cli.js" },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.1",
     "zod": "3.25.76"

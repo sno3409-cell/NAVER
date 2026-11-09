@@ -63,7 +63,7 @@ function describeHttpError(status, body) {
   let detail = "";
   try {
     const j = JSON.parse(body);
-    detail = [j.code, j.title, j.message].filter(Boolean).join(" / ");
+    detail = [j.code, j.title, j.detail, j.message, j.header && `헤더: ${j.header}`].filter(Boolean).join(" / ");
   } catch {
     detail = body.slice(0, 300);
   }
