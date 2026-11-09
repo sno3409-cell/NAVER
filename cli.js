@@ -40,10 +40,10 @@ async function main() {
   if (merged.size === 0) {
     throw new UserFacingError(failures.map((f) => `[${f.batch.join(",")}] ${f.error}`).join("\n\n") || "조회 결과가 없습니다.");
   }
-  const all = [...merged.values()];
+  const keywordList = [...merged.values()];
   // rows: 검색수 순 상위. opportunities: 경쟁도 "높음"을 뺀 키워드 중 검색수 순 상위(글감 후보로 우선 검토).
-  const rows = summarize(all, limit);
-  const opportunities = summarize(all.filter((k) => k.compIdx && k.compIdx !== "높음"), limit);
+  const rows = summarize(keywordList, limit);
+  const opportunities = summarize(keywordList.filter((k) => k.compIdx && k.compIdx !== "높음"), limit);
   console.log(JSON.stringify({ fetchedAt: new Date().toISOString(), seeds: unique, total: merged.size, rows, opportunities, failures }, null, 2));
 }
 
