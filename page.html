@@ -1,8 +1,8 @@
-<title>의료 블로그 글감</title>
+<title>블로그 글감 노트</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* 레이아웃: 한 줄 머리말 → 오늘의 글감 표 → 지난 7일 목록. 진료 기록지처럼 차분하게. */
+/* 레이아웃: 머리말 → 의료 글감 카드 → 일반 글감 카드 → 지난 7일. 진료 기록지처럼 차분하게, 카드마다 숫자 줄과 개요. */
 :root {
   --bg: #f5f7f7;
   --surface: #ffffff;
@@ -10,6 +10,7 @@
   --muted: #5a6b69;
   --line: #d8e0df;
   --accent: #17607a;
+  --gen: #6a4c93;
   --low: #1e7a4c;
   --mid: #9a6a0e;
   --high: #b03a2e;
@@ -19,38 +20,46 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0f1716; --surface: #16201f; --fg: #e3ecea; --muted: #93a5a2; --line: #2a3735;
-    --accent: #6cb7d1; --low: #6fcf97; --mid: #e3b45a; --high: #f08a7e; color-scheme: dark;
+    --accent: #6cb7d1; --gen: #b9a1e0; --low: #6fcf97; --mid: #e3b45a; --high: #f08a7e; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0f1716; --surface: #16201f; --fg: #e3ecea; --muted: #93a5a2; --line: #2a3735;
-  --accent: #6cb7d1; --low: #6fcf97; --mid: #e3b45a; --high: #f08a7e; color-scheme: dark;
+  --accent: #6cb7d1; --gen: #b9a1e0; --low: #6fcf97; --mid: #e3b45a; --high: #f08a7e; color-scheme: dark;
 }
 body {
   background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 32px 48px;
 }
-.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 32px; }
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 36px; }
 header { display: grid; gap: 4px; }
 .eyebrow { font-size: 12px; letter-spacing: .08em; color: var(--muted); }
 h1 { margin: 0; font-size: 28px; font-weight: 700; text-wrap: balance; }
 .meta { color: var(--muted); font-size: 14px; }
 .meta time, .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
-h2 { margin: 0 0 12px; font-size: 18px; font-weight: 700; }
-.table-box { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
-table { width: 100%; border-collapse: collapse; min-width: 760px; }
-th, td { padding: 12px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
-th { font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .04em; white-space: nowrap; }
-tr:last-child td { border-bottom: 0; }
-td.num, th.num { text-align: right; white-space: nowrap; }
-.title { font-weight: 700; }
-.why, .rel { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.filter { color: var(--muted); font-size: 13px; }
+.sec-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+h2 { margin: 0; font-size: 19px; font-weight: 700; }
+.tag { font-size: 12px; font-weight: 500; padding: 1px 8px; border-radius: 4px; color: var(--surface); }
+.tag.med { background: var(--accent); } .tag.gen { background: var(--gen); }
+.topics { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr)); gap: 14px; }
+.topic { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; display: grid; gap: 8px; min-width: 0; }
+.topic .head { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: baseline; }
+.rank { font-family: var(--font-data); color: var(--muted); font-size: 13px; }
+.title { font-weight: 700; font-size: 16px; text-wrap: balance; }
+.stats { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+.stats b { color: var(--fg); font-weight: 500; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
 .kw { font-family: var(--font-data); font-size: 13px; color: var(--accent); }
-.comp { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; border: 1px solid currentColor; white-space: nowrap; }
+#gen .kw { color: var(--gen); }
+.comp { display: inline-block; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 500; border: 1px solid currentColor; white-space: nowrap; }
 .comp.low { color: var(--low); } .comp.mid { color: var(--mid); } .comp.high { color: var(--high); } .comp.none { color: var(--muted); }
-.empty { padding: 28px 20px; color: var(--muted); }
+.why, .rel { color: var(--muted); font-size: 13px; }
+.outline { margin: 0; padding-left: 1.4em; font-size: 14px; display: grid; gap: 2px; }
+.outline::before { content: "개요"; display: block; margin-left: -1.4em; font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.empty { background: var(--surface); border: 1px dashed var(--line); border-radius: 8px; padding: 24px 20px; color: var(--muted); }
 .alert { padding: 14px 16px; border: 1px solid var(--high); color: var(--high); border-radius: 8px; background: var(--surface); white-space: pre-wrap; }
+.note { color: var(--muted); font-size: 13px; margin-top: 10px; }
 .history { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .history li { display: grid; grid-template-columns: 7.5em 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
 .history li > div { min-width: 0; }
@@ -63,30 +72,36 @@ a { color: var(--accent); }
 <div class="wrap">
   <header>
     <div class="eyebrow">매일 저녁 8시 · 네이버 검색광고 키워드 도구 + 최신 이슈</div>
-    <h1>의료 블로그 글감</h1>
-    <div class="meta">마지막 갱신 <time id="updated">—</time></div>
+    <h1>블로그 글감 노트</h1>
+    <div class="meta">마지막 갱신 <time id="updated">2026-11-09 13:04</time></div>
+    <div class="filter">후보 조건: 월간 검색수 1,000~3,000회 · 경쟁도 낮음 (모자라면 중간까지)</div>
   </header>
 
-  <section aria-labelledby="today-h">
-    <h2 id="today-h">오늘의 글감</h2>
-    <!-- TODAY:START -->
-    <div class="table-box">
-      <div class="empty">첫 결과는 오늘 저녁 8시 전후에 이곳에 올라옵니다. 글감마다 추천 제목, 핵심 키워드, 월간 검색수와 클릭수, 경쟁도, 고른 이유가 표로 정리됩니다.</div>
-    </div>
-    <!-- TODAY:END -->
+  <section id="med" aria-labelledby="med-h">
+    <div class="sec-head"><h2 id="med-h">오늘의 의료 글감</h2><span class="tag med">의료</span></div>
+    <!-- MED:START -->
+    <div class="empty">오늘 저녁 8시 전후에 새 조건으로 고른 의료 글감이 올라옵니다. 글감마다 추천 제목, 핵심 키워드의 검색수·모바일 비중·클릭수·경쟁도, 소제목 개요가 함께 정리됩니다.</div>
+    <!-- MED:END -->
+  </section>
+
+  <section id="gen" aria-labelledby="gen-h">
+    <div class="sec-head"><h2 id="gen-h">오늘의 일반 글감</h2><span class="tag gen">일반</span></div>
+    <!-- GEN:START -->
+    <div class="empty">오늘 저녁 8시 전후에 생활·살림·계절 주제의 일반 글감이 올라옵니다.</div>
+    <!-- GEN:END -->
   </section>
 
   <section aria-labelledby="hist-h">
-    <h2 id="hist-h">지난 7일</h2>
+    <h2 id="hist-h" style="margin-bottom:12px">지난 7일</h2>
     <!-- HISTORY:START -->
-    <ul class="history">
-      <li><time class="num">—</time><div>아직 기록이 없습니다.</div></li>
-    </ul>
-    <!-- HISTORY:END -->
+<ul class="history">
+<li><time class="num">2026-11-09</time><div>[의료] 집에서 혈당 재는 법과 측정값 읽는 방법 / 고지혈증약을 먹기 전후 알아둘 일반 정보 / 겨울철 비염 증상 관리, 실내 환경부터 점검하기 / 대장내시경 약 복용 전 알아둘 준비 과정 총정리 / 목감기 증상 관리와 병원에 가야 하는 신호 / 코골이 원인과 수면 중 숨 쉬기 불편할 때 확인할 점 / 혈압약 복용 중 지켜야 할 생활 수칙(임의 중단 주의) / 대장 용종이란? 발견되면 알아둘 점 / 백일해·Tdap 예방접종 대상과 시기 안내</div></li>
+</ul>
+<!-- HISTORY:END -->
   </section>
 
   <footer>
-    <div>검색수·클릭수는 네이버 검색광고 키워드 도구의 최근 30일 기준이며, 클릭수는 월평균 추정치입니다. 경쟁도는 검색광고 입찰 경쟁 정도입니다.</div>
+    <div>검색수·클릭수는 네이버 검색광고 키워드 도구의 최근 30일 기준이며, 클릭수는 월평균 추정치입니다. 경쟁도는 검색광고 입찰 경쟁 정도입니다. 모바일 비중이 높으면 일반 소비자 검색이 많은 키워드입니다.</div>
     <div>특정 병원·시술 홍보나 치료 효과를 단정하는 주제는 의료광고 기준에 따라 제외합니다.</div>
   </footer>
 </div>

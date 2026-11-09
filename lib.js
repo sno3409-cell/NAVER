@@ -145,37 +145,51 @@ function show(v) {
   return n === null ? String(v) : String(Math.round(n * 10) / 10);
 }
 
-export function summarize(keywordList, limit) {
+// options: { minSearch, maxSearch, competition: ["낮음","중간"], sort: "search" | "click" }
+export function summarize(keywordList, limit, options = {}) {
+  const { minSearch, maxSearch, competition, sort = "search" } = options;
   return keywordList
     .map((k) => {
       const search = addCounts(k.monthlyPcQcCnt, k.monthlyMobileQcCnt);
       const click = addCounts(k.monthlyAvePcClkCnt, k.monthlyAveMobileClkCnt);
+      const mobile = toNumber(k.monthlyMobileQcCnt) ?? 0;
       return {
         keyword: k.relKeyword,
         searchPc: show(k.monthlyPcQcCnt),
         searchMobile: show(k.monthlyMobileQcCnt),
         searchTotal: search.label,
+        mobileShare: search.value > 0 ? `${Math.round((mobile / search.value) * 100)}%` : "-",
         clickPc: show(k.monthlyAvePcClkCnt),
         clickMobile: show(k.monthlyAveMobileClkCnt),
         clickTotal: click.label,
         competition: k.compIdx ?? "-",
-        _sort: search.value,
+        _search: search.value,
+        _click: click.value,
       };
     })
-    .sort((a, b) => b._sort - a._sort)
+    .filter((r) => (minSearch == null || r._search >= minSearch) && (maxSearch == null || r._search <= maxSearch))
+    .filter((r) => !competition?.length || competition.includes(r.competition))
+    .sort((a, b) => (sort === "click" ? b._click - a._click : b._search - a._search))
     .slice(0, limit)
-    .map(({ _sort, ...rest }) => rest);
+    .map(({ _search, _click, ...rest }) => rest);
 }
 
-export function toMarkdown(hints, rows) {
+export function describeOptions({ minSearch, maxSearch, competition, sort } = {}) {
+  const parts = [];
+  if (minSearch != null || maxSearch != null) parts.push(`월간 검색수 ${minSearch ?? 0}~${maxSearch ?? "∞"}회`);
+  if (competition?.length) parts.push(`경쟁도 ${competition.join("·")}`);
+  parts.push(sort === "click" ? "클릭수 합계 순" : "월간 검색수 합계 순");
+  return parts.join(" · ");
+}
+
+export function toMarkdown(hints, rows, options = {}) {
   const header =
-    `**연관 키워드 상위 ${rows.length}개** (기준 키워드: ${hints.join(", ")} · 월간 검색수 합계 순)\n\n` +
-    "| # | 키워드 | 검색수 PC | 검색수 모바일 | 검색수 합계 | 클릭수 PC | 클릭수 모바일 | 클릭수 합계 | 경쟁도 |\n" +
-    "|---|---|---:|---:|---:|---:|---:|---:|---|\n";
+    `**연관 키워드 ${rows.length}개** (기준 키워드: ${hints.join(", ")} · ${describeOptions(options)})\n\n` +
+    "| # | 키워드 | 검색수 PC | 검색수 모바일 | 검색수 합계 | 모바일 비중 | 클릭수 합계 | 경쟁도 |\n" +
+    "|---|---|---:|---:|---:|---:|---:|---|\n";
   const lines = rows.map(
     (r, i) =>
-      `| ${i + 1} | ${r.keyword} | ${r.searchPc} | ${r.searchMobile} | ${r.searchTotal} | ${r.clickPc} | ${r.clickMobile} | ${r.clickTotal} | ${r.competition} |`
+      `| ${i + 1} | ${r.keyword} | ${r.searchPc} | ${r.searchMobile} | ${r.searchTotal} | ${r.mobileShare} | ${r.clickTotal} | ${r.competition} |`
   );
-  return header + lines.join("\n") + "\n\n검색수·클릭수는 최근 30일 기준이며, 클릭수는 월평균 추정치입니다.";
+  return header + lines.join("\n") + "\n\n검색수·클릭수는 최근 30일 기준이며, 클릭수는 월평균 추정치입니다. 모바일 비중이 높으면 일반 소비자, 낮으면 실무자·PC 사용자 검색이 많은 키워드입니다.";
 }
-

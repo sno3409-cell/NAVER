@@ -1,8 +1,12 @@
 #!/usr/bin/env node
-// 예약 작업용 명령줄 도구. 기준 키워드를 5개씩 나눠 조회하고, 연관 키워드를 합쳐 JSON으로 출력한다.
+// 예약 작업용 명령줄 도구. seeds.json의 묶음(의료/일반)별로 기준 키워드를 5개씩 나눠 조회하고 JSON으로 출력한다.
 // 사용법:
-//   node cli.js                     → seeds.json의 키워드 전체 조회
-//   node cli.js 당뇨,고혈압 [개수]   → 지정한 키워드만 조회
+//   node cli.js                     → seeds.json 전체 조회
+//   node cli.js 당뇨,고혈압 [개수]   → 지정한 키워드만 조회("직접" 묶음)
+// 출력(묶음마다):
+//   niche:    seeds.json filter 조건(기본: 월 1,000~3,000회 · 경쟁도 낮음)에 맞는 키워드, 검색수 순
+//   fallback: 같은 검색수 범위에서 경쟁도 낮음·중간, 검색수 순(niche가 모자랄 때 사용)
+//   top:      전체 검색수 순 상위(흐름 파악용)
 // 성공: stdout에 JSON, 종료 코드 0 / 실패: stderr에 원인 메시지, 종료 코드 1
 
 import { readFileSync } from "node:fs";
@@ -10,41 +14,51 @@ import { UserFacingError, loadCredentials, normalizeKeywords, fetchKeywordStats,
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function main() {
-  const [arg, limitArg] = process.argv.slice(2);
-  const limit = Number(limitArg) || 50;
-  const seeds = arg
-    ? arg.split(/[,\n]/)
-    : JSON.parse(readFileSync(new URL("./seeds.json", import.meta.url), "utf8")).keywords;
-
-  const creds = loadCredentials();
-  const all = String(seeds.join(",")).split(",").map((s) => s.replace(/\s+/g, "")).filter(Boolean);
-  const unique = [...new Set(all)];
-  const batches = [];
-  for (let i = 0; i < unique.length; i += 5) batches.push(normalizeKeywords(unique.slice(i, i + 5).join(",")));
-
+async function collect(seeds, creds) {
+  const unique = [...new Set(seeds.map((s) => String(s).replace(/\s+/g, "")).filter(Boolean))];
   const merged = new Map();
   const failures = [];
-  for (const batch of batches) {
+  for (let i = 0; i < unique.length; i += 5) {
+    const batch = normalizeKeywords(unique.slice(i, i + 5).join(","));
     try {
       for (const k of await fetchKeywordStats(batch, creds)) merged.set(k.relKeyword, k);
     } catch (err) {
       if (!(err instanceof UserFacingError)) throw err;
       failures.push({ batch, error: err.message });
-      // 인증 오류는 다른 묶음도 똑같이 실패하므로 바로 멈춘다.
-      if (/HTTP 40[13]/.test(err.message)) break;
+      if (/HTTP 40[13]/.test(err.message)) throw new UserFacingError(err.message); // 인증 오류는 전부 실패하므로 즉시 중단
     }
     await sleep(500); // 호출 한도(429) 예방
   }
+  return { seeds: unique, keywordList: [...merged.values()], failures };
+}
 
-  if (merged.size === 0) {
-    throw new UserFacingError(failures.map((f) => `[${f.batch.join(",")}] ${f.error}`).join("\n\n") || "조회 결과가 없습니다.");
+async function main() {
+  const [arg, limitArg] = process.argv.slice(2);
+  const limit = Number(limitArg) || 50;
+  const config = JSON.parse(readFileSync(new URL("./seeds.json", import.meta.url), "utf8"));
+  const filter = config.filter || {};
+  const categories = arg ? { 직접: arg.split(/[,\n]/) } : config.categories;
+
+  const creds = loadCredentials();
+  const result = { fetchedAt: new Date().toISOString(), filter, categories: {} };
+  for (const [name, seeds] of Object.entries(categories)) {
+    const { seeds: used, keywordList, failures } = await collect(seeds, creds);
+    const range = { minSearch: filter.minSearch, maxSearch: filter.maxSearch };
+    result.categories[name] = {
+      seeds: used,
+      total: keywordList.length,
+      niche: summarize(keywordList, limit, { ...range, competition: filter.competition }),
+      fallback: summarize(keywordList, limit, { ...range, competition: filter.fallbackCompetition }),
+      top: summarize(keywordList, 20),
+      failures,
+    };
   }
-  const keywordList = [...merged.values()];
-  // rows: 검색수 순 상위. opportunities: 경쟁도 "높음"을 뺀 키워드 중 검색수 순 상위(글감 후보로 우선 검토).
-  const rows = summarize(keywordList, limit);
-  const opportunities = summarize(keywordList.filter((k) => k.compIdx && k.compIdx !== "높음"), limit);
-  console.log(JSON.stringify({ fetchedAt: new Date().toISOString(), seeds: unique, total: merged.size, rows, opportunities, failures }, null, 2));
+  const empty = Object.values(result.categories).every((c) => c.total === 0);
+  if (empty) {
+    const msgs = Object.values(result.categories).flatMap((c) => c.failures.map((f) => `[${f.batch.join(",")}] ${f.error}`));
+    throw new UserFacingError(msgs.join("\n\n") || "조회 결과가 없습니다.");
+  }
+  console.log(JSON.stringify(result, null, 2));
 }
 
 main().catch((err) => {
