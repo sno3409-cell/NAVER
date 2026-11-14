@@ -7,6 +7,7 @@
 //   byCompetition.낮음/중간/높음
 //     inRange:    seeds.json filter의 검색수 범위(기본 월 1,000~3,000회) 안, 검색수 순
 //     outOfRange: 같은 경쟁도에서 범위 밖 키워드, 범위에 가까운 순(inRange가 모자랄 때 사용)
+//     byVolume:   같은 경쟁도 전체를 검색수 큰 순으로(경쟁도 높음은 이 목록을 쓴다)
 //   top: 전체 검색수 순 상위(흐름 파악용)
 // 성공: stdout에 JSON, 종료 코드 0 / 실패: stderr에 원인 메시지, 종료 코드 1
 
@@ -55,7 +56,8 @@ async function main() {
         .filter((r) => value(r) < minSearch || value(r) > maxSearch)
         .sort((a, b) => distance(a) - distance(b))
         .slice(0, limit);
-      byCompetition[level] = { inRange, outOfRange };
+      // byVolume: 검색수 범위와 상관없이 검색수 큰 순(경쟁도 높음 글감은 이 목록에서 고른다)
+      byCompetition[level] = { inRange, outOfRange, byVolume: all.slice(0, limit) };
     }
     result.categories[name] = {
       seeds: used,
