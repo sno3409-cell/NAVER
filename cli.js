@@ -4,9 +4,10 @@
 //   node cli.js                     → seeds.json 전체 조회
 //   node cli.js 당뇨,고혈압 [개수]   → 지정한 키워드만 조회("직접" 묶음)
 // 출력(묶음마다):
-//   niche:    seeds.json filter 조건(기본: 월 1,000~3,000회 · 경쟁도 낮음)에 맞는 키워드, 검색수 순
-//   fallback: 같은 검색수 범위에서 경쟁도 낮음·중간, 검색수 순(niche가 모자랄 때 사용)
-//   top:      전체 검색수 순 상위(흐름 파악용)
+//   byCompetition.낮음/중간/높음
+//     inRange:    seeds.json filter의 검색수 범위(기본 월 1,000~3,000회) 안, 검색수 순
+//     outOfRange: 같은 경쟁도에서 범위 밖 키워드, 범위에 가까운 순(inRange가 모자랄 때 사용)
+//   top: 전체 검색수 순 상위(흐름 파악용)
 // 성공: stdout에 JSON, 종료 코드 0 / 실패: stderr에 원인 메시지, 종료 코드 1
 
 import { readFileSync } from "node:fs";
@@ -43,12 +44,23 @@ async function main() {
   const result = { fetchedAt: new Date().toISOString(), filter, categories: {} };
   for (const [name, seeds] of Object.entries(categories)) {
     const { seeds: used, keywordList, failures } = await collect(seeds, creds);
-    const range = { minSearch: filter.minSearch, maxSearch: filter.maxSearch };
+    const { minSearch = 0, maxSearch = Infinity } = filter;
+    const byCompetition = {};
+    for (const level of ["낮음", "중간", "높음"]) {
+      const all = summarize(keywordList, 10000, { competition: [level] });
+      const value = (r) => Number(String(r.searchTotal).replace(/[^0-9.]/g, "")) || 0;
+      const inRange = all.filter((r) => value(r) >= minSearch && value(r) <= maxSearch).slice(0, limit);
+      const distance = (r) => (value(r) < minSearch ? minSearch - value(r) : value(r) - maxSearch);
+      const outOfRange = all
+        .filter((r) => value(r) < minSearch || value(r) > maxSearch)
+        .sort((a, b) => distance(a) - distance(b))
+        .slice(0, limit);
+      byCompetition[level] = { inRange, outOfRange };
+    }
     result.categories[name] = {
       seeds: used,
       total: keywordList.length,
-      niche: summarize(keywordList, limit, { ...range, competition: filter.competition }),
-      fallback: summarize(keywordList, limit, { ...range, competition: filter.fallbackCompetition }),
+      byCompetition,
       top: summarize(keywordList, 20),
       failures,
     };
